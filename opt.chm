@@ -1,0 +1,51 @@
+energy energy=e coords=qmmm.c theory=dl_poly  : [ list \
+        amber_prmtop_file=qmmm.prmtop \
+        scale14 = [ list [ expr 1 / 1.2 ] 0.5  ] \
+        use_pairlist = no \
+        save_dl_poly_files = yes \
+        list_option=medium ]
+
+source groups
+source frozen
+source residues
+source active_atoms
+
+set atom_charges [ list_amber_atom_charges ]
+
+
+set qm_atoms { 503-517,2405-2415,3272-3283,9444-9458,9741-9755,10202-10207,11129-11162, \
+                11283-11285,11355-11357,11409-11411,11634-11636,11688-11690}
+
+
+matrix e
+
+set g_args [ list hamiltonian= b3lyp \
+                 g98_mem= 50GB \
+                 basis=631gd optstr={Int=(Grid=UltraFine)} \
+                 exe=g09 charge=-2 mult=1 \
+                 nproc=64\
+            ]
+
+dl-find \
+      list_option = medium \
+      coords=qmmm.c \
+      theory= hybrid : [ list \
+                        coupling= shift groups= $groups \
+                        qm_region= $qm_atoms \
+                        cutoff= 0 \
+                        atom_charges= $atom_charges \
+                        qm_theory= gaussian : $g_args \
+                        list_option= medium \
+                        mm_theory= dl_poly  : [ list \
+                                    frozen= $frozen \
+                                    amber_prmtop_file=qmmm.prmtop \
+                                    scale14 = [ list [ expr 1 / 1.2 ] 0.5  ] \
+                                    conn= qmmm.c \
+                                    use_pairlist = no\
+                                    save_dl_poly_files = yes \
+                                    list_option=medium ] \
+                         ] \
+     active_atoms= $active_atoms \
+     frozen = $frozen \
+     maxcycle=9999 \
+     result= opt.c
